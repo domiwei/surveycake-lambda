@@ -3,7 +3,6 @@ package main
 import (
 	"crypto/aes"
 	"crypto/cipher"
-	"encoding/hex"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -48,8 +47,10 @@ func PKCS7UnPadding(plantText []byte) []byte {
 }
 
 func decodeSurveyCake(ciphertext []byte) (interface{}, error) {
-	key, _ := hex.DecodeString("de80f38c35c2dcc6")
-	iv, _ := hex.DecodeString("b827eb2ec6d44696")
+	//key, _ := hex.DecodeString("de80f38c35c2dcc6")
+	//iv, _ := hex.DecodeString("b827eb2ec6d44696")
+	key := []byte("de80f38c35c2dcc6")
+	iv := []byte("b827eb2ec6d44696")
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		return nil, err
