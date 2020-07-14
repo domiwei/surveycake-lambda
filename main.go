@@ -1,9 +1,12 @@
 package main
 
 import (
+	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/apex/gateway"
 	"github.com/gin-gonic/gin"
@@ -21,16 +24,38 @@ func welcomeHandler(c *gin.Context) {
 func rootHandler(c *gin.Context) {
 	svid := c.Query("svid")
 	hash := c.Query("hash")
-	c.String(http.StatusOK, "svid: %s, hash: %s", svid, hash)
+	path := fmt.Sprintf("https://www.surveycake.com/webhook/v0/%s/%s", svid, hash)
+
+	body, err := requestToBody(path)
+	if err != nil {
+		c.String(http.StatusServiceUnavailable, "Failed to send request to surveycake. Error msg: %s", err.Error())
+	}
+
+	c.String(http.StatusOK, "body: %s", body)
 }
 
-/*
-func postHandler(c *gin.Context) {
-	svid := c.Param("svid")
-	hash := c.Param("hash")
-	c.String(http.StatusOK, "svid: %s, hash: %s", svid, hash)
+func requestToBody(path string) (string, error) {
+	req, err := http.NewRequest(http.MethodGet, path, nil)
+	if err != nil {
+		return "", err
+	}
+	client := &http.Client{Timeout: time.Minute}
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", err
+	} else if !(200 <= resp.StatusCode && resp.StatusCode < 300) {
+		return "", fmt.Errorf("unexpected resp code %d", resp.StatusCode)
+	}
+
+	// read body
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+	return string(body), nil
 }
-*/
+
 func routerEngine() *gin.Engine {
 	// set server mode
 	gin.SetMode(gin.DebugMode)
@@ -44,7 +69,6 @@ func routerEngine() *gin.Engine {
 	r.GET("/welcome", welcomeHandler)
 	r.GET("/user/:name", helloHandler)
 	r.GET("/frankie", rootHandler)
-	//	r.POST("/frankie", postHandler)
 
 	return r
 }
