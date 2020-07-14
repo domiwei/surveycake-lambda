@@ -1,8 +1,6 @@
 package main
 
 import (
-	"crypto/aes"
-	"crypto/cipher"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -12,6 +10,10 @@ import (
 
 	"github.com/apex/gateway"
 	"github.com/gin-gonic/gin"
+)
+
+var (
+	key = []byte("de80f38c35c2dcc6")
 )
 
 func helloHandler(c *gin.Context) {
@@ -32,33 +34,12 @@ func rootHandler(c *gin.Context) {
 	if err != nil {
 		c.String(http.StatusServiceUnavailable, "Failed to send request to surveycake. Error msg: %s", err.Error())
 	}
-	questionnarie, err := decodeSurveyCake([]byte(body))
+	questionnarie, err := Decrypt(body, key)
 	if err != nil {
 		c.String(http.StatusServiceUnavailable, "Failed to decode. Error msg: %s", err.Error())
 	}
 
 	c.String(http.StatusOK, "body: %s", questionnarie)
-}
-
-func PKCS7UnPadding(plantText []byte) []byte {
-	length := len(plantText)
-	unpadding := int(plantText[length-1])
-	return plantText[:(length - unpadding)]
-}
-
-func decodeSurveyCake(ciphertext []byte) (interface{}, error) {
-	//key, _ := hex.DecodeString("de80f38c35c2dcc6")
-	//iv, _ := hex.DecodeString("b827eb2ec6d44696")
-	key := []byte("de80f38c35c2dcc6")
-	iv := []byte("b827eb2ec6d44696")
-	block, err := aes.NewCipher(key)
-	if err != nil {
-		return nil, err
-	}
-	mode := cipher.NewCBCDecrypter(block, iv)
-	mode.CryptBlocks(ciphertext, ciphertext)
-	result := PKCS7UnPadding(ciphertext)
-	return result, nil
 }
 
 func requestToBody(path string) (string, error) {
