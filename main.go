@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/apex/gateway"
@@ -13,7 +12,8 @@ import (
 )
 
 var (
-	key = []byte("de80f38c35c2dcc6")
+	// aes key provided from surveycake
+	key string
 )
 
 func helloHandler(c *gin.Context) {
@@ -34,7 +34,7 @@ func rootHandler(c *gin.Context) {
 	if err != nil {
 		c.String(http.StatusServiceUnavailable, "Failed to send request to surveycake. Error msg: %s", err.Error())
 	}
-	questionnarie, err := Decrypt(body, key)
+	questionnarie, err := Decrypt(body, []byte(key))
 	if err != nil {
 		c.String(http.StatusServiceUnavailable, "Failed to decode. Error msg: %s", err.Error())
 	}
@@ -82,8 +82,7 @@ func routerEngine() *gin.Engine {
 }
 
 func main() {
-	addr := ":" + os.Getenv("PORT")
-	log.Fatal(gateway.ListenAndServe(addr, routerEngine()))
+	log.Fatal(gateway.ListenAndServe("", routerEngine()))
 }
 
 /*package main
